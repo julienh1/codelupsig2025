@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!-- En-tête de la page -->
+<head>
+    <meta charset="utf-8"/>
+    <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"><script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+<title>Bootstrap</title>
+</head>
+<!-- Corps de la page -->
+<body>
+    <div class="container-fluid">
+    <div class="text-center"><h1>Burn Severity Analysis of
+    Gonfaron’s Fire in the Plaine des
+    Maures Natural Reserve using
+    Difference Normalized Burn Ratio</h1></div>
+<h2>by Laura MADONA</h2>
+<h3>Context :</h3>
+<div class="text-center">
+     “Plaine des Maures National Natural Reserve” contains an exceptional biodiversity in the Mediterranean region. The diversity of natural habitats in mosaic (oaks, pine forests, lawns, temporary ponds, maquis, sandstone slabs, meadows...) constitutes favorable environments for a large number of remarkable and even threatened heritage species.
+    On August 16th 2021 the Natural Reserve was hit a fire resulting in more than half of the Reserve burned. This analysis aims to determine the severity of the fire impact on the Plaine des Maures natural reserve’s vegetation, delivering useful information to guide managing actions directed toward the recovery process of the natural reserve vegetation. This same analysis could then be reproduced for the following years to monitor vegetation recovery.
+    The Burn severity metric is largely based on loss of organic matter in the soil and aboveground organic matter conversion to ash (e.g. Keeley, J.E. 2009). In the discipline of remote sensing, it uses the difference Normalized Burn Ratio (dNBR) with its values classified into 5 severity level defined by Key & Benson (2006)
+    <div><p><img src="assets/img/FIT.JPG" alt=""/></p></div>
+    <div><p><img src="assets/img/data.JPG" alt=""/></p></div>
+</div>
+<h3>Method :</h3>
+<div class="text-justify">
+    This Analysis is based on the use of the difference Normalized Burn Ratio to assess Burn severity. Burn severity describes how the fire intensity affects the functioning of the ecosystem in the area that has been burnt. The observed effects often vary within the area and between different ecosystems (Keeley, 2009). Burn severity can also be described as the degree to which an area has been altered or disrupted by the fire.
+    <div class="text-center"><p><img src="assets/img/FI.JPG" alt=""/></p></div>
+<div class="text-justify">The Normalized Burn Ratio (NBR) is an index designed to highlight burnt areas. The formula use both near infrared (NIR) and shortwave infrared (SWIR) wavelengths. Matching Sentinel 2 spectral bands are Band 08 (NIR) and Band 12 (SWIR).
+    Healthy vegetation shows a very high reflectance in the NIR, and low reflectance in the SWIR portion of the spectrum. In areas impacted by fire, it’s the opposite. Recently burnt areas demonstrated low reflectance in the NIR and high reflectance in the SWIR hence the difference between the spectral responses of healthy vegetation and burnt areas reach their peak in the NIR and the SWIR regions of the spectrum.
+</div>   
+<div class="text-center"><p><img src="assets/img/SP.JPG" alt=""/></p></div>
+<div class="text-justify"><p>NBR uses the ratio between NIR and SWIR bands, high NBR values indicates healthy vegetation while low values indicate bare ground and recently burnt areas. Non-burnt areas are normally attributed to values close to zero.</p> </div>
+</div>
+<div><p>Difference Normalized Burn Ratio is the delta between the pre-fire and post-fire NBR (dNBR or ΔNBR), obtained from the images and used to estimate the burn severity. A higher value of dNBR indicates more severe damage, while areas with negative dNBR values may indicate regrowth following a fire.</p> </div>
+
+<div><p>severity data and maps can aid in developing emergency rehabilitation and restoration plans post-fire. They can be used to estimate not only the soil burn severity, but the likelihood of future downstream impacts due to flooding, landslides, and soil erosion.</p> </div>
+<h3>Analysis :</h3>
+<h4>Step 1 : Obtaining a polygon of the impacted area</h4>
+<div class="text-justify"><p> </p>
+    <p>The first objective of this analysis was to extract a contour polygon of the burned area. The selected method was a supervised classification based on the post fire Sentinel 2 image. </p>
+    <p>Band 04 (RED,) Band 08 (NIR) and Band 12 (SWIR) were integrated into a composite raster enabling the creation of the training samples that are then used to classify the raster into 3 groups: Burned Area, Bare Ground and Healthy Vegetation. Bare Ground classification was an important factor in getting an appropriate Burned area, the reason being that it’s reflectance of the electromagnetic spectrum is quite close to that of the less burned areas. It could also be a result of the scattered ashes. </p>
+    <p>Once that classification was deemed sufficiently accurate, an extraction by attribute was executed to extract the Burned Area, then turned to a polygon and cleaned (A lot of scattered pixels classified as burned were present outside of the burned area, they were removed so as not to incorporate wrong data into the results. Cutting the composite raster to an area close to the AOI might have avoided this problem </p>
+    <p>The resulting polygon was named “Burned_Area_2021” then clipped to the AOI using the Plaine des Maures Natural Reserve boundary polygon. This polygon was named “Burned_AOI” and correspond to the burned area inside the reserve boundaries. </p>
+<h4>Step 2 : Calculating NBR & dNBR</h4>
+</div>
+<p>NBR for Pre-Fire, Post-Fire and 1 year Post-Fire were generated using Raster Calculator with the following syntax:</p>
+    <ul>
+        <li> Pre-Fire :
+            Float(("%PretFire_Sentinel2 Band8%"-"%PreFire_Sentinel2 Band12%"))/Float(("%PretFire_Sentinel2 Band8%"+"%PreFire_Sentinel2 Band12%"))</li>
+        <li>Post-Fire:
+            Float(("%PostFire_Sentinel2 Band8%"-"%PostFire_Sentinel2 Band12%"))/Float(("%PostFire_Sentinel2 Band8%"+"%PostFire_Sentinel2 Band12%")) </li>
+        <li>1 year Post-Fire:
+            Float(("%1yPostFire_Sentinel2 Band8%"-"%1yPostFire_Sentinel2 Band12%"))/Float(("%1yPostFire_Sentinel2 Band8%"+"%1yPostFire_Sentinel2 Band12%"))</li></ul>
+            <p> Note that the “Float” expression is very important here, without it the resulting values would be integers by default.</p>
+            <p>dNBR is generated using these resulting NBR in a new Raster Calculator Expression :</p>
+        
+        <ul>    <li>dNBR : Float("%NBR_Pre-Fire%"-"%NBR_PostFire%")</li>
+        <li>dNBR 1 year after fire :
+            Float("%NBR_Pre-Fire%"-"%NBR_1yl%") </li>   
+    </ul>
+
+<h4>Step 3 : Cutting to AOI & applying burn severity symbology</h4>
+<p>The dNBR rasters were clipped using the “extract by mask” tool and using two different previously generated Area of Interest : </p>
+<p>“Burned_Area_2021” → the whole burned area </p>
+<p>“Burned_AOI” → the area burned in the Plaine des Maures natural reserve </p>
+<p> Burn Severity symbology was then applied to all the resulting rasters using a previously made symbology layer (see figure 1).</p>
+<h4>Step 4 : Extracting statistical values of the results</h4>
+<p>Zonal Statistics as tables were performed on all of the analysis final Burn Severity rasters. The Mean statistic was considered to relate how impacted the Natural reserve was in comparison with the whole burned area. </p>
+<h4>Step 5 : Crossing Vegetation Formations & Burn Severity data</h4>
+
+<p> Going one step further, an analysis to determine what types of vegetation formation were most severely burned was carried out. First Intersecting the vegetation formation layer with burned area, followed by Zonal statistic as table using the Burn Severity raster and finally joining the resulting table to the previously acquired “Vegetation Formation within the burned area” layer. It was then classified using the “Mean” value and the burn severity symbology</p>
+<h3>Results :</h3>
+<h4>Supervised Classification and Extracted Burned Area Polygons :</h4>
+<div class="text-center"><p><img src="assets/img/Bac.JPG" alt=""/></p></div>
+<p>On the left is the classified raster including the 3 previously mentioned classes, (Burned Area in Red, Bare Ground in Beige and Health Vegetation in Green). </p>
+<p>Only the Burned Area was refined to be the most accurate. We can see on the right image that it overlaps really well with the Burned Area seen on the dNBR image (burned areas on dNBR appears in white but only the green of the Burned area polygon can be seen, meaning it is accurate enough that it overlap really well). </p>
+
+<h4>NBR & dNBR :</h4>
+
+<p>The following images show the NBR calculated for the different dates, the “burn scar” is very dark and clearly visible on the post fire image. After 1 year, while less “dark” the scar is still visible. NBR value goes from -1 to +1, low values reflect burned area while high value reflects healthy vegetation. (Here low values are “darker” and high values are “brighter”) </p>
+<div class="text-center"><p><img src="assets/img/dnbr.JPG" alt=""/></p></div>
+<p>dNBR is the difference of NBR pre-fire and NBR post fire, the values are between -2 and 2. Contrary to NBR, here the highest the value correspond to most severe burns and low values to unburned area. </p>
+<p>We start to see some disparities on how the fire affected specific areas, and it becomes even more evident when we look at the 1 year later dNBR, the area situated up north (north being top of the image) look like it has been less severely affected or has recovered better, but no conclusion can be made at this point. </p>
+
+<div class="text-center"><p><img src="assets/img/ddnbr.JPG" alt=""/></p></div><p> </p>
+<h4>Burn Severity:</h4>
+
+<p>Now once classified Burn Severity symbology has been applied, we can better understand how the fire affected the area. </p>
+<div class="text-center"><p><img src="assets/img/bsv.JPG" alt=""/></p></div><p> </p>
+<p> The Natural reserve, was severely impacted but some areas show moderate to low impact. In comparison, the rest of the burned area show high burn severity nearly everywhere.</p>
+<p> After one year the difference is clearer, the Reserve show mostly unburned and low severity while it’s mostly moderate – high severity for the rest of the burned area.</p>
+<p>The Mean dNBR values obtained from the zonal statistics seems to correlate with this analysis: </p>
+<div class="text-center"><p><img src="assets/img/results.JPG" alt=""/></p></div><p> </p>
+
+<h4>Vegetation Formations Burn Severity</h4>
+
+<p> complementary analysis was performed by crossing burn severity data with a “Vegetation Formations” layer (IGN’s BD_FORET). It displays how severely the different types of vegetations formations were affected in the burned area. It brings interesting and valuable information that could be used for post fire vegetation management adaptation.</p>
+<div class="text-center"><p><img src="assets/img/res2.JPG" alt=""/></p></div><p> </p>
+
+<h3>Conclusion :</h3>
+<p> The Plaine des Maures Natural Reserve suffered mostly moderate to high burn severity.</p>
+<p> One year later vegetation in the Reserve seems to be well on its way to recovery. After the fire in 2021, the authorities managing the Natural Reserve decided to restrain the access to the Reserve area for one year in order to let the ecosystems recover with limited anthropogenic impact.
+
+</p>
+<p> However, some areas of the Natural Reserve seem to have been more affected than others. These disparities could originate from a variety of reasons, the type of vegetations affected could be one.</p>
+<p> Managing actions directed toward the recovery process of the natural reserve vegetation could focus on these areas.</p>
+
+<h3>References :</h3>
+<div class="text-center"><p><img src="assets/img/ref.JPG" alt=""/></p></div><p> </p>
+</div>
+
+
+<a class="pdf" href="assets/Burned_Severity_Analysis_Process.pdf" target = "_blank">Lien vers le PDF</a>
+</body>
+</html>
+
+
+
+
+
+
+
